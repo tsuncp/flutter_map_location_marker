@@ -1,3 +1,8 @@
+## [2.1.0] - Improve behavior
+
+* Accept callback for handling geolocator error
+* Resubscribe position stream on location settings change
+
 ## [2.0.2] - Improve naming
 
 * Rename [CenterOnLocationUpdate.first] to [CenterOnLocationUpdate.once]
