@@ -42,12 +42,26 @@ class LocationMarkerLayer extends StatefulWidget {
 
 /// The logic and internal state for a [LocationMarkerLayer].
 class LocationMarkerLayerState extends State<LocationMarkerLayer>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late LocationMarkerLayerOptions _locationMarkerOpts;
   late bool _isFirstLocationUpdate;
   LocationMarkerPosition? _currentPosition;
   late StreamSubscription<LocationMarkerPosition> _positionStreamSubscription;
   double? _centeringZoom;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _positionStreamSubscription = _subscriptPositionStream();
+        break;
+      case AppLifecycleState.paused:
+        _positionStreamSubscription.cancel();
+        break;
+      default:
+        break;
+    }
+  }
 
   /// A stream for centering single that also include a zoom level.
   StreamSubscription<double?>? _centerCurrentLocationStreamSubscription;
@@ -59,7 +73,6 @@ class LocationMarkerLayerState extends State<LocationMarkerLayer>
     _locationMarkerOpts =
         widget.locationMarkerOpts ?? LocationMarkerLayerOptions();
     _isFirstLocationUpdate = true;
-    _positionStreamSubscription = _subscriptPositionStream();
     _centerCurrentLocationStreamSubscription =
         widget.plugin.centerCurrentLocationStream?.listen((double? zoom) {
       if (_currentPosition != null) {
@@ -70,6 +83,8 @@ class LocationMarkerLayerState extends State<LocationMarkerLayer>
         _centeringZoom = zoom;
       }
     });
+    _positionStreamSubscription = _subscriptPositionStream();
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
@@ -88,10 +103,11 @@ class LocationMarkerLayerState extends State<LocationMarkerLayer>
 
   @override
   void dispose() {
+    super.dispose();
     _positionStreamSubscription.cancel();
     _centerCurrentLocationStreamSubscription?.cancel();
     _animationController?.dispose();
-    super.dispose();
+    WidgetsBinding.instance.removeObserver(this);
   }
 
   StreamSubscription<LocationMarkerPosition> _subscriptPositionStream() {
